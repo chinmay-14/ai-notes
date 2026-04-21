@@ -20,9 +20,15 @@ const db = mysql.createPool({
     port: process.env.DB_PORT
 });
 
-/* ================= CREATE TABLES AUTO ================= */
+/* ================= FORCE FIX TABLES (TEMPORARY) ================= */
+
+// ❌ Delete old wrong tables
+db.query(`DROP TABLE IF EXISTS users`);
+db.query(`DROP TABLE IF EXISTS notes`);
+
+// ✅ Create correct tables
 db.query(`
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL
@@ -30,7 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
 `);
 
 db.query(`
-CREATE TABLE IF NOT EXISTS notes (
+CREATE TABLE notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     content TEXT,
@@ -40,12 +46,12 @@ CREATE TABLE IF NOT EXISTS notes (
 
 /* ================= ROUTES ================= */
 
-// ✅ Health Check
+// Health check
 app.get('/', (req, res) => {
     res.send("Backend running 🚀");
 });
 
-// ✅ REGISTER
+// REGISTER
 app.post('/register', async (req, res) => {
     const { email, password } = req.body;
 
@@ -55,7 +61,7 @@ app.post('/register', async (req, res) => {
         db.query(
             "INSERT INTO users (email, password) VALUES (?, ?)",
             [email, hashed],
-            (err, result) => {
+            (err) => {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
@@ -67,7 +73,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// ✅ LOGIN
+// LOGIN
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
 
@@ -103,7 +109,7 @@ app.post('/login', (req, res) => {
     );
 });
 
-// ✅ ADD NOTE
+// ADD NOTE
 app.post('/add-note', (req, res) => {
     const { userId, content } = req.body;
 
@@ -117,7 +123,7 @@ app.post('/add-note', (req, res) => {
     );
 });
 
-// ✅ GET NOTES
+// GET NOTES
 app.get('/get-notes/:userId', (req, res) => {
     const { userId } = req.params;
 
@@ -131,7 +137,7 @@ app.get('/get-notes/:userId', (req, res) => {
     );
 });
 
-// ✅ DELETE NOTE
+// DELETE NOTE
 app.delete('/delete-note/:id', (req, res) => {
     const { id } = req.params;
 
