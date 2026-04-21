@@ -9,11 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: "*", // allow all for now (fix later)
+    origin: "*"
 }));
 app.use(express.json());
 
-// ✅ DATABASE CONNECTION (FIXED)
+/* ================= DATABASE (FIXED) ================= */
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -22,22 +22,14 @@ const db = mysql.createPool({
     port: process.env.DB_PORT
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error("❌ DB Error:", err);
-    } else {
-        console.log("✅ MySQL Connected");
-    }
-});
+/* ================= ROUTES ================= */
 
-// ================= ROUTES =================
-
-// Health check
+// ✅ Health Check
 app.get('/', (req, res) => {
     res.send("Backend running 🚀");
 });
 
-// ✅ REGISTER (FIXED + HASHING)
+// ✅ REGISTER
 app.post('/register', async (req, res) => {
     const { email, password } = req.body;
 
@@ -59,32 +51,40 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// ✅ LOGIN (FIXED + JWT)
+// ✅ LOGIN
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
 
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+    db.query(
+        "SELECT * FROM users WHERE email = ?",
+        [email],
+        async (err, results) => {
+            if (err) return res.status(500).json({ error: err.message });
 
-        if (results.length === 0) {
-            return res.status(400).json({ message: "User not found" });
+            if (results.length === 0) {
+                return res.status(400).json({ message: "User not found" });
+            }
+
+            const user = results[0];
+            const match = await bcrypt.compare(password, user.password);
+
+            if (!match) {
+                return res.status(400).json({ message: "Wrong password" });
+            }
+
+            const token = jwt.sign(
+                { id: user.id },
+                process.env.JWT_SECRET || "secret",
+                { expiresIn: "1d" }
+            );
+
+            res.json({
+                message: "Login successful",
+                token,
+                userId: user.id
+            });
         }
-
-        const user = results[0];
-        const match = await bcrypt.compare(password, user.password);
-
-        if (!match) {
-            return res.status(400).json({ message: "Wrong password" });
-        }
-
-        const token = jwt.sign({ id: user.id }, "secret", { expiresIn: "1d" });
-
-        res.json({
-            message: "Login successful",
-            token,
-            userId: user.id
-        });
-    });
+    );
 });
 
 // ✅ ADD NOTE
@@ -129,4 +129,7 @@ app.delete('/delete-note/:id', (req, res) => {
     );
 });
 
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+/* ================= START SERVER ================= */
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
