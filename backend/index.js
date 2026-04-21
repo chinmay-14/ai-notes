@@ -14,11 +14,12 @@ app.use(cors({
 app.use(express.json());
 
 // ✅ DATABASE CONNECTION (FIXED)
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT
 });
 
 db.connect((err) => {
