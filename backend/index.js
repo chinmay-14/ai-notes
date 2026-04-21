@@ -20,29 +20,29 @@ const db = mysql.createPool({
     port: process.env.DB_PORT
 });
 
-/* ================= FORCE FIX TABLES (TEMPORARY) ================= */
+/* ================= INIT DB ================= */
+const initDB = () => {
+    db.query(`
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL
+    )
+    `);
 
-// ❌ Delete old wrong tables
-db.query(`DROP TABLE IF EXISTS users`);
-db.query(`DROP TABLE IF EXISTS notes`);
+    db.query(`
+    CREATE TABLE IF NOT EXISTS notes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        content TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    `);
 
-// ✅ Create correct tables
-db.query(`
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
-)
-`);
+    console.log("✅ Tables ensured");
+};
 
-db.query(`
-CREATE TABLE notes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    content TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-`);
+initDB();
 
 /* ================= ROUTES ================= */
 
