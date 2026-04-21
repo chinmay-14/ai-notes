@@ -18,7 +18,7 @@ function Dashboard() {
             console.log("Error fetching notes");
         }
     };
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchNotes();
     }, []);
